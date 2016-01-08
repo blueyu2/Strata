@@ -1,0 +1,16 @@
+[
+{
+  "modid": "strata",
+  "name": "Strata",
+  "description": "Adds layers of stone, called strata, into the world.",
+  "version": "1.0",
+  "mcversion": "1.7.10",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["blueyu2"],
+  "credits": "Better Than Wolves, Dense Ores",
+  "logoFile": "assets/strata/textures/logo.png",
+  "screenshots": [],
+  "dependencies": []
+}
+]
