@@ -64,10 +64,10 @@ public class ChunkReplacer {
                         Block block = chunk.getBlock(x, y, z);
                         int meta = chunk.getBlockMetadata(x, y, z);
                         Block replace = StrataRegistry.blocks.get(StrataRegistry.getBlockMeta(block, meta, false));
-                        if(replace != null){
+                        if(replace != null)
                             chunk.func_150807_a(x, y, z, replace, replaceMeta);
-                            durationCounter++;
-                        }
+
+                        durationCounter++;
 
                         if(durationCounter >= duration){
                             durationCounter = 0;
