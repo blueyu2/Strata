@@ -2,6 +2,7 @@ package com.blueyu2.strata;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent;
@@ -61,6 +62,9 @@ public class ChunkReplacer {
                         return;
                     }
                     for(int y = 0; y < 256; y++){
+                        while (chunk.getBlock(x, y, z) == Blocks.bedrock)
+                            y++;
+
                         Block block = chunk.getBlock(x, y, z);
                         int meta = chunk.getBlockMetadata(x, y, z);
                         Block replace = StrataRegistry.blocks.get(StrataRegistry.getBlockMeta(block, meta, false));
