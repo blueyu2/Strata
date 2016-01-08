@@ -1,6 +1,7 @@
 package com.blueyu2.strata;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
@@ -12,19 +13,27 @@ public class StrataConfig {
     public static final StrataConfig instance = new StrataConfig();
     public static final String CATEGORY_STONE = "stones.";
     public static final String CATEGORY_ORE = "ores.";
+    public static final File configDir = new File(new File(Minecraft.getMinecraft().mcDataDir, "config"), "Strata");
 
     public static int maxDepth = 2;
     public static boolean uninstall = false;
 
     public void loadConfig(File file){
-        Configuration config = new Configuration(file, true);
+        Configuration vanillaConfig = new Configuration(new File(configDir, "minecraft.cfg"), true);
 
-        config.load();
+        vanillaConfig.load();
 
-        uninstall = config.getBoolean("Uninstall", "Main", false, "Set this to true and load any worlds with Strata installed to replace all Strata blocks in world with the original blocks. This allows for safe removal of Strata without your worlds getting ruined.");
+
+
+        Configuration baseConfig = new Configuration(file, true);
+
+        baseConfig.load();
+        uninstall = baseConfig.getBoolean("Uninstall", "Main", false, "Set this to true and load any worlds with Strata installed to replace all Strata blocks in world with the original blocks. This allows for safe removal of Strata without your worlds getting ruined.");
+        baseConfig.save();
 
         StrataRegistry.initVanillaBlocks();
 
+        vanillaConfig.load();
         for(Block block : StrataRegistry.blocks.values()){
             if(block instanceof StrataBlock){
                 StrataBlock sBlock = (StrataBlock) block;
@@ -35,29 +44,40 @@ public class StrataConfig {
                         cat = CATEGORY_STONE + sBlock.blockId;
                         if(sBlock.meta > 0)
                             cat = cat + ":" + sBlock.meta;
-                        config.get(cat, "stoneTexture", sBlock.stoneTexture);
+                        vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
                         break;
                     case ORE:
                         cat = CATEGORY_ORE + sBlock.blockId;
                         if(sBlock.meta > 0)
                             cat = cat + ":" + sBlock.meta;
-                        config.get(cat, "oreTexture", sBlock.oreTexture);
-                        config.get(cat, "stoneTexture", sBlock.stoneTexture);
+                        vanillaConfig.get(cat, "oreTexture", sBlock.oreTexture);
+                        vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
                         break;
                 }
             }
         }
+        vanillaConfig.save();
 
-        for(String cat : config.getCategoryNames()){
-            if(cat.startsWith(CATEGORY_STONE)){
-                addBlock(cat, StrataBlock.Type.STONE, config);
-            }
-            else if(cat.startsWith(CATEGORY_ORE)){
-                addBlock(cat, StrataBlock.Type.ORE, config);
+        if(configDir.listFiles() != null){
+            for(File configFile : configDir.listFiles()){
+                String fileName = configFile.getName();
+                String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+                if(!extension.equals("cfg"))
+                    continue;
+
+                Configuration config = new Configuration(configFile, true);
+                config.load();
+                for(String cat : config.getCategoryNames()){
+                    if(cat.startsWith(CATEGORY_STONE)){
+                        addBlock(cat, StrataBlock.Type.STONE, config);
+                    }
+                    else if(cat.startsWith(CATEGORY_ORE)){
+                        addBlock(cat, StrataBlock.Type.ORE, config);
+                    }
+                }
+                config.save();
             }
         }
-
-        config.save();
     }
 
     private void addBlock(String cat, StrataBlock.Type type, Configuration config){
