@@ -28,6 +28,8 @@ public class StrataRegistry {
 
     public static void initVanillaBlocks(){
         registerStone("minecraft:stone", 0, "stone");
+        registerStone("minecraft:dirt", 0, "dirt");
+        registerStone("minecraft:gravel", 0, "gravel");
         registerOre("minecraft:iron_ore", 0, "iron_ore", "stone");
         registerOre("minecraft:gold_ore", 0, "gold_ore", "stone");
         registerOre("minecraft:lapis_ore", 0, "lapis_ore", "stone");

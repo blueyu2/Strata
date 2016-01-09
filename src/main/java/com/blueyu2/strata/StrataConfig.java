@@ -19,44 +19,42 @@ public class StrataConfig {
     public static boolean uninstall = false;
 
     public void loadConfig(File file){
-        Configuration vanillaConfig = new Configuration(new File(configDir, "minecraft.cfg"), true);
-
-        vanillaConfig.load();
-
-
-
         Configuration baseConfig = new Configuration(file, true);
 
         baseConfig.load();
         uninstall = baseConfig.getBoolean("Uninstall", "Main", false, "Set this to true and load any worlds with Strata installed to replace all Strata blocks in world with the original blocks. This allows for safe removal of Strata without your worlds getting ruined.");
         baseConfig.save();
 
-        StrataRegistry.initVanillaBlocks();
+        File vanillaFile = new File(configDir, "minecraft.cfg");
 
-        vanillaConfig.load();
-        for(Block block : StrataRegistry.blocks.values()){
-            if(block instanceof StrataBlock){
-                StrataBlock sBlock = (StrataBlock) block;
-                String cat;
+        if(!vanillaFile.exists()){
+            Configuration vanillaConfig = new Configuration(vanillaFile, true);
+            vanillaConfig.load();
+            StrataRegistry.initVanillaBlocks();
+            for(Block block : StrataRegistry.blocks.values()){
+                if(block instanceof StrataBlock){
+                    StrataBlock sBlock = (StrataBlock) block;
+                    String cat;
 
-                switch (sBlock.type){
-                    case STONE:
-                        cat = CATEGORY_STONE + sBlock.blockId;
-                        if(sBlock.meta > 0)
-                            cat = cat + ":" + sBlock.meta;
-                        vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
-                        break;
-                    case ORE:
-                        cat = CATEGORY_ORE + sBlock.blockId;
-                        if(sBlock.meta > 0)
-                            cat = cat + ":" + sBlock.meta;
-                        vanillaConfig.get(cat, "oreTexture", sBlock.oreTexture);
-                        vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
-                        break;
+                    switch (sBlock.type){
+                        case STONE:
+                            cat = CATEGORY_STONE + sBlock.blockId;
+                            if(sBlock.meta > 0)
+                                cat = cat + ":" + sBlock.meta;
+                            vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
+                            break;
+                        case ORE:
+                            cat = CATEGORY_ORE + sBlock.blockId;
+                            if(sBlock.meta > 0)
+                                cat = cat + ":" + sBlock.meta;
+                            vanillaConfig.get(cat, "oreTexture", sBlock.oreTexture);
+                            vanillaConfig.get(cat, "stoneTexture", sBlock.stoneTexture);
+                            break;
+                    }
                 }
             }
+            vanillaConfig.save();
         }
-        vanillaConfig.save();
 
         if(configDir.listFiles() != null){
             for(File configFile : configDir.listFiles()){

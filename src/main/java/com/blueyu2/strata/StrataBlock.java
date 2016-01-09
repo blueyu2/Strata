@@ -3,6 +3,7 @@ package com.blueyu2.strata;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -45,7 +46,7 @@ public class StrataBlock extends Block {
 
     //Ore
     public StrataBlock(String blockId, int meta, String oreTexture, String stoneTexture) {
-        super(Block.getBlockFromName(blockId).getMaterial());
+        super(Material.rock);
         baseBlock = Block.getBlockFromName(blockId);
         this.blockId = blockId;
         this.meta = meta;
