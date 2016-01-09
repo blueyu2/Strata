@@ -58,6 +58,11 @@ public class StrataBlock extends Block {
     }
 
     @Override
+    public void onBlockDestroyedByPlayer(World world, int x, int y, int z, int meta) {
+        baseBlock.onBlockDestroyedByPlayer(world, x, y, z, meta);
+    }
+
+    @Override
     protected boolean canSilkHarvest(){
         return true;
     }
