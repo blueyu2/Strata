@@ -10,6 +10,9 @@ import net.minecraft.client.resources.data.AnimationMetadataSection;
 import net.minecraft.util.ResourceLocation;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
@@ -134,9 +137,9 @@ public class StrataTexture extends TextureAtlasSprite {
         BufferedImage[] oreImage = new BufferedImage[1 + mip];
 
         BufferedImage stoneImage;
-        int width;
 
-        AnimationMetadataSection animation;
+        AnimationMetadataSection oreAnimation;
+        int oreAnimationMultiplier = 1;
 
         try{
             IResource iOreResource = manager.getResource(getBlockResource(oreName));
@@ -145,20 +148,26 @@ public class StrataTexture extends TextureAtlasSprite {
             oreImage[0] = ImageIO.read(iOreResource.getInputStream());
             stoneImage = ImageIO.read(iStoneResource.getInputStream());
 
-            animation = (AnimationMetadataSection) iOreResource.getMetadata("animation");
+            //Just in case the stone image is animated. I'm not going to generate a texture from two animated textures
+            stoneImage = stoneImage.getSubimage(0, 0, stoneImage.getWidth(), stoneImage.getWidth());
 
-            width = oreImage[0].getWidth();
+            oreAnimation = (AnimationMetadataSection) iOreResource.getMetadata("animation");
+            if(oreAnimation != null)
+                oreAnimationMultiplier = oreAnimation.getFrameCount();
 
-            if(stoneImage.getWidth() != width){
-                List resourcePacks = manager.getAllResources(getBlockResource(stoneName));
-                for(int i = resourcePacks.size() - 1; i >= 0; --i){
-                    IResource resource = (IResource) resourcePacks.get(i);
-                    stoneImage = ImageIO.read(resource.getInputStream());
+            //If stone is smaller than ore, scale up stone texture
+            if(stoneImage.getWidth() < oreImage[0].getWidth()){
+                int oreWidth = oreImage[0].getWidth(), oreHeight = oreImage[0].getHeight();
+                if(oreAnimation != null)
+                    oreHeight = oreWidth;
 
-                    if(stoneImage.getWidth() == width){
-                        break;
-                    }
-                }
+                stoneImage = resize(stoneImage, oreWidth, oreHeight);
+            }
+            //Otherwise if ore is smaller, scale up ore
+            else if(stoneImage.getWidth() > oreImage[0].getWidth()){
+                int stoneWidth = stoneImage.getWidth(), stoneHeight = stoneImage.getHeight();
+
+                oreImage[0] = resize(oreImage[0], stoneWidth, stoneHeight * oreAnimationMultiplier);
             }
         }
         catch (IOException e){
@@ -166,44 +175,62 @@ public class StrataTexture extends TextureAtlasSprite {
             return true;
         }
 
-        if(stoneImage.getWidth() != width){
-            return true;
-        }
-
-        oreImage[0] = generateOre(oreImage[0], stoneImage);
+        oreImage[0] = generateOre(oreImage[0], oreAnimationMultiplier, stoneImage);
 
         outputImage = oreImage[0];
 
-        this.loadSprite(oreImage, animation, (float) Minecraft.getMinecraft().gameSettings.anisotropicFiltering > 1.0f);
+        this.loadSprite(oreImage, oreAnimation, (float) Minecraft.getMinecraft().gameSettings.anisotropicFiltering > 1.0f);
 
         return false;
     }
 
-    public BufferedImage generateOre(BufferedImage oreImage, BufferedImage stoneImage){
-        BufferedImage newImage = generateStone(oreImage);
+    //Help from http://stackoverflow.com/a/9417836
+    public static BufferedImage resize(BufferedImage img, int newW, int newH) {
+        Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
+        BufferedImage dimg = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
+
+        Graphics2D g2d = dimg.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+
+        return dimg;
+    }
+
+    public BufferedImage generateAnimatedTexture(BufferedImage image, int multiplier){
+        BufferedImage temp = new BufferedImage(image.getWidth(), image.getHeight() * multiplier, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = temp.createGraphics();
+        for(int i = 0; i < multiplier; i++){
+            g2d.drawImage(image, 0, image.getHeight() * i, null);
+        }
+        g2d.dispose();
+        return temp;
+    }
+
+    public BufferedImage generateOre(BufferedImage oreImage, int oreAnimation, BufferedImage stoneImage){
+        BufferedImage coalFix = generateStone(oreImage);
+        BufferedImage newImage = generateStone(generateAnimatedTexture(stoneImage, oreAnimation));
 
         for(int x = 0; x < oreImage.getWidth(); x++){
             for(int y = 0; y < oreImage.getHeight(); y++){
                 int sx = x % stoneImage.getWidth();
                 int sy = y % stoneImage.getHeight();
 
-                if(getAlpha(oreImage.getRGB(x, y)) == 0 || oreImage.getRGB(x, y) == stoneImage.getRGB(sx, sy))
-                    continue;
-
-                int r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(stoneImage.getRGB(sx, sy)));
-                int g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(stoneImage.getRGB(sx, sy)));
-                int b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(stoneImage.getRGB(sx, sy)));
-
-
-
-                if(r < 28 && g < 28 && b < 28)
+                if(getAlpha(oreImage.getRGB(x, y)) == 0 ||oreImage.getRGB(x, y) == stoneImage.getRGB(sx, sy))
                     continue;
 
                 //Fix coal & other dark ores
-                r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(newImage.getRGB(x, y)));
-                g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(newImage.getRGB(x, y)));
-                b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(newImage.getRGB(x, y)));
-                if(r < 36 && g < 36 && b < 36)
+                int r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(newImage.getRGB(x, y)));
+                int g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(newImage.getRGB(x, y)));
+                int b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(newImage.getRGB(x, y)));
+                if(r < 49 && g < 49 && b < 49){
+                    newImage.setRGB(x, y, coalFix.getRGB(x, y));
+                    continue;
+                }
+
+                r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(stoneImage.getRGB(sx, sy)));
+                g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(stoneImage.getRGB(sx, sy)));
+                b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(stoneImage.getRGB(sx, sy)));
+                if(r < 28 && g < 28 && b < 28)
                     continue;
 
                 newImage.setRGB(x, y, oreImage.getRGB(x, y));
