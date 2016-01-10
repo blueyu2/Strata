@@ -109,7 +109,6 @@ public class StrataTexture extends TextureAtlasSprite {
                 break;
         }
 
-
         return result;
     }
 
@@ -167,20 +166,11 @@ public class StrataTexture extends TextureAtlasSprite {
         int oreAnimationMultiplier = 1;
 
         try{
-            IResource iOverrideResource = null;
-            switch (type){
-                case STONE:
-                    iOverrideResource = manager.getResource(getBlockResource(getDerivedStoneName(stoneName, depth)));
-                    break;
-                case ORE:
-                    iOverrideResource = manager.getResource(getBlockResource(getDerivedOreName(stoneName, depth, oreName)));
-                    break;
-            }
+            IResource iOverrideResource = manager.getResource(getBlockResource(getDerivedStoneName(stoneName, depth)));
             override = ImageIO.read(iOverrideResource.getInputStream());
             overrideStone = true;
         }
         catch (IOException e){
-            //e.printStackTrace();
         }
 
         try{
