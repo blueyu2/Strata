@@ -27,16 +27,16 @@ import java.util.Random;
  * Created by blueyu2 on 1/4/16.
  */
 public class StrataBlock extends Block {
-    String blockId;
+    public String blockId;
     Block baseBlock;
-    int meta;
-    String oreTexture;
-    String stoneTexture;
+    public int meta;
+    public String oreTexture;
+    public String stoneTexture;
     int maxDepth = 2;
 
-    enum Type {STONE, ORE}
+    public enum Type {STONE, ORE}
 
-    Type type;
+    public Type type;
 
     //Stone
     public StrataBlock(String blockId, int meta, String stoneTexture){
@@ -119,7 +119,15 @@ public class StrataBlock extends Block {
         if(register instanceof TextureMap){
             TextureMap map = (TextureMap) register;
             for (int i = 0; i < maxDepth; i++) {
-                String name = StrataTexture.getDerivedName(oreTexture, i);
+                String name = null;
+                switch (type){
+                    case STONE:
+                        name = StrataTexture.getDerivedStoneName(stoneTexture, i);
+                        break;
+                    case ORE:
+                        name = StrataTexture.getDerivedOreName(oreTexture, i, stoneTexture);
+                        break;
+                }
                 TextureAtlasSprite texture = map.getTextureExtry(name);
                 if (texture == null) {
                     texture = new StrataTexture(oreTexture, stoneTexture, i, type);

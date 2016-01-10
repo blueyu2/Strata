@@ -19,7 +19,7 @@ public class ChunkReplacer {
     private static final String STRATA = "Strata";
 
     @SubscribeEvent
-    public void initGen(PopulateChunkEvent.Pre event){
+    public void initGen(PopulateChunkEvent.Post event){
         generate(event.world.getChunkFromChunkCoords(event.chunkX, event.chunkZ));
     }
 

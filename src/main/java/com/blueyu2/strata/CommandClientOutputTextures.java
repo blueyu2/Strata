@@ -46,7 +46,16 @@ public class CommandClientOutputTextures extends CommandBase {
                         if(image == null)
                             continue;
 
-                        String file = StrataTexture.getDerivedName(texture.oreName, texture.depth);
+                        String file = null;
+                        switch (sBlock.type){
+                            case STONE:
+                                file = StrataTexture.getDerivedStoneName(texture.stoneName, texture.depth);
+                                break;
+                            case ORE:
+                                file = StrataTexture.getDerivedOreName(texture.oreName, texture.depth, texture.stoneName);
+                                break;
+
+                        }
                         int index = file.indexOf(':');
                         file = file.substring(index + 1);
 

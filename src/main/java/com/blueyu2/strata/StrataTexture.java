@@ -23,38 +23,57 @@ public class StrataTexture extends TextureAtlasSprite {
     public int depth;
     String oreName;
     String stoneName;
+    BufferedImage override = null;
+    boolean overrideStone = false;
 
     public double depthMult = 0.7d;
 
     public BufferedImage outputImage = null;
 
     public StrataTexture(String oreName, String baseName, int depth, StrataBlock.Type type) {
-        super(getDerivedName(oreName, depth));
+        super(type == StrataBlock.Type.STONE ? getDerivedStoneName(oreName, depth) : getDerivedOreName(oreName, depth, baseName));
         this.oreName = oreName;
         this.stoneName = baseName;
         this.type = type;
         this.depth = depth;
     }
 
-    public static String getDerivedName(String textureName, int depth){
-        String modName = "minecraft";
+    public static String getDerivedStoneName(String oreName, int depth){
+        String oreModName = "minecraft";
 
-        int index = textureName.indexOf(':');
+        int oreIndex = oreName.indexOf(':');
 
-        if(index >= 0){
-            if(index > 1){
-                modName = textureName.substring(0, index);
+        if(oreIndex >= 0){
+            if(oreIndex > 1){
+                oreModName = oreName.substring(0, oreIndex);
             }
-            textureName = textureName.substring(index + 1, textureName.length());
+            oreName = oreName.substring(oreIndex + 1, oreName.length());
         }
 
-        modName = modName.toLowerCase();
+        oreName = oreName.toLowerCase();
 
-        return Strata.MODID + ":" + modName + "/" + textureName + "-" + depth;
+        return Strata.MODID + ":" + oreModName + "/" + oreName + "." + depth;
+    }
+
+    public static String getDerivedOreName(String oreName, int depth, String baseName){
+        String baseModName = "minecraft";
+
+        int baseIndex = baseName.indexOf(':');
+
+        if(baseIndex >= 0){
+            if(baseIndex > 1){
+                baseModName = baseName.substring(0, baseIndex);
+            }
+            baseName = baseName.substring(baseIndex + 1, baseName.length());
+        }
+
+        baseName = baseName.toLowerCase();
+
+        return getDerivedStoneName(oreName, depth) + "+" + baseModName + "|" + baseName;
     }
 
     public boolean hasCustomLoader(IResourceManager manager, ResourceLocation location) {
-        ResourceLocation location1 = new ResourceLocation(location.getResourceDomain(), String.format("%s/%s%s", new Object[]{"textures/blocks", location.getResourcePath(), ".png"}));
+        ResourceLocation location1 = new ResourceLocation(location.getResourceDomain(), String.format("%s/%s%s", "textures/blocks", location.getResourcePath(), ".png"));
         try {
             manager.getResource(location1);
             return false;
@@ -66,7 +85,16 @@ public class StrataTexture extends TextureAtlasSprite {
     public boolean load(IResourceManager manager, ResourceLocation location){
         boolean result = true;
 
-        String file = getDerivedName(oreName, depth);
+        String file = null;
+        switch (type){
+            case STONE:
+                file = getDerivedStoneName(stoneName, depth);
+                break;
+            case ORE:
+                file = getDerivedOreName(oreName, depth, stoneName);
+                break;
+        }
+        //String file = getDerivedName(oreName, stoneName, depth);
         int index = file.indexOf(':');
         file = file.substring(index + 1);
 
@@ -139,6 +167,23 @@ public class StrataTexture extends TextureAtlasSprite {
         int oreAnimationMultiplier = 1;
 
         try{
+            IResource iOverrideResource = null;
+            switch (type){
+                case STONE:
+                    iOverrideResource = manager.getResource(getBlockResource(getDerivedStoneName(stoneName, depth)));
+                    break;
+                case ORE:
+                    iOverrideResource = manager.getResource(getBlockResource(getDerivedOreName(stoneName, depth, oreName)));
+                    break;
+            }
+            override = ImageIO.read(iOverrideResource.getInputStream());
+            overrideStone = true;
+        }
+        catch (IOException e){
+            //e.printStackTrace();
+        }
+
+        try{
             IResource iOreResource = manager.getResource(getBlockResource(oreName));
             IResource iStoneResource = manager.getResource(getBlockResource(stoneName));
 
@@ -205,7 +250,13 @@ public class StrataTexture extends TextureAtlasSprite {
 
     public BufferedImage generateOre(BufferedImage oreImage, int oreAnimation, BufferedImage stoneImage){
         BufferedImage coalFix = generateStone(oreImage);
-        BufferedImage newImage = generateStone(generateAnimatedTexture(stoneImage, oreAnimation));
+        BufferedImage newImage;
+        if(!overrideStone){
+            newImage = generateStone(generateAnimatedTexture(stoneImage, oreAnimation));
+        }
+        else {
+            newImage = generateAnimatedTexture(override, oreAnimation);
+        }
 
         for(int x = 0; x < oreImage.getWidth(); x++){
             for(int y = 0; y < oreImage.getHeight(); y++){
@@ -215,13 +266,17 @@ public class StrataTexture extends TextureAtlasSprite {
                 if(getAlpha(oreImage.getRGB(x, y)) == 0 ||oreImage.getRGB(x, y) == stoneImage.getRGB(sx, sy))
                     continue;
 
-                //Fix coal & other dark ores
-                int r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(newImage.getRGB(x, y)));
-                int g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(newImage.getRGB(x, y)));
-                int b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(newImage.getRGB(x, y)));
-                if(r < 49 && g < 49 && b < 49){
-                    newImage.setRGB(x, y, coalFix.getRGB(x, y));
-                    continue;
+                int r, g, b;
+
+                //Makes coal ore and emerald ore look better
+                if(override == null && (oreName.equals("coal_ore") || oreName.equals("emerald_ore"))){
+                    r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(newImage.getRGB(x, y)));
+                    g = Math.abs(getGreen(oreImage.getRGB(x, y)) - getGreen(newImage.getRGB(x, y)));
+                    b = Math.abs(getBlue(oreImage.getRGB(x, y)) - getBlue(newImage.getRGB(x, y)));
+                    if(r < 49 && g < 49 && b < 49){
+                        newImage.setRGB(x, y, coalFix.getRGB(x, y));
+                        continue;
+                    }
                 }
 
                 r = Math.abs(getRed(oreImage.getRGB(x, y)) - getRed(stoneImage.getRGB(sx, sy)));
