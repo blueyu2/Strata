@@ -15,10 +15,13 @@ public class BlockStrata extends Block {
     public IBakedModel[] models;
     public IBakedModel[] invModels;
 
-
+    public BlockStrataEntry[] entries;
 
     public BlockStrata() {
         super(Material.rock, Material.rock.getMaterialMapColor());
         this.setCreativeTab(CreativeTabs.tabBlock);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(METADATA, 0));
+        this.entries = new BlockStrataEntry[maxMetadata];
+
     }
 }

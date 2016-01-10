@@ -2,6 +2,10 @@ package com.blueyu2.strata;
 
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+
+import java.io.File;
 
 /**
  * Created by blueyu2 on 1/9/16.
@@ -15,4 +19,17 @@ public class StrataMod {
     public static Proxy proxy;
 
     public static BlockStrata block;
+
+    private File config;
+
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event){
+        config = event.getSuggestedConfigurationFile();
+        StrataConfig.configDir = new File(config.getParentFile(), "Strata");
+    }
+
+    @Mod.EventHandler
+    public void init(FMLInitializationEvent event){
+        StrataConfig.instance.loadConfig(config);
+    }
 }
