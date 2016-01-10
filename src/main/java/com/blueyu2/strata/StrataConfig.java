@@ -22,7 +22,7 @@ public class StrataConfig {
         Configuration baseConfig = new Configuration(file, true);
 
         baseConfig.load();
-        uninstall = baseConfig.getBoolean("Uninstall", "Main", false, "Set this to true and load any worlds with Strata installed to replace all Strata blocks in world with the original blocks. This allows for safe removal of Strata without your worlds getting ruined.");
+        uninstall = baseConfig.getBoolean("Uninstall", "Main", false, "Set this to true and go to all the areas you went to with Strata installed to replace all Strata blocks in the world with the original blocks. This allows for safe removal of Strata without your worlds getting ruined.");
         baseConfig.save();
 
         File vanillaFile = new File(configDir, "minecraft.cfg");
