@@ -13,7 +13,7 @@ public class StrataConfig {
     public static final StrataConfig instance = new StrataConfig();
     public static final String CATEGORY_STONE = "stones.";
     public static final String CATEGORY_ORE = "ores.";
-    public static final File configDir = new File(new File(Minecraft.getMinecraft().mcDataDir, "config"), "Strata");
+    public static File configDir = null;
 
     public static int maxDepth = 2;
     public static boolean uninstall = false;
